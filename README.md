@@ -20,9 +20,9 @@ which includes openvino inference API, OpenVino WorkBench and VTune Profiler.
         
         source venv/bin/activate
 
-5. Load the OpenVino Variables from installed directory of OpenVino
+5. Load the OpenVino Variables from installed directory of OpenVino (change path according to your OpenVino version)
 
-        source {INSTALLED_OPENVINO_DIR}/bin/setupvars.sh 
+        source /opt/intel/openvino_2021/bin/setupvars.sh 
             
 6. Just execute <i>runme.sh</i> from working directory to install prerequisites and you are good to go !!
 
@@ -201,3 +201,6 @@ We know using async will user the all cores of my CPU and improves the performan
 2. Face Not Found
 3. Multiple Faces (Right now chose the biggest area one as it would be a nearer to webcam in general)
 4. Wrong Video/Image file given
+
+This is updated version of https://github.com/KMKnation/Computer-Pointer-Controller
+
