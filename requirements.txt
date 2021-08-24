@@ -11,7 +11,7 @@ ipython-genutils==0.2.0
 jedi==0.17.0
 MouseInfo==0.1.3
 numpy==1.17.4
-opencv-python==4.2.0.34
+opencv-python==4.5.*
 parso==0.7.0
 pexpect==4.8.0
 pickleshare==0.7.5
