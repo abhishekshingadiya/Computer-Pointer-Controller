@@ -1,17 +1,18 @@
-from argparse import ArgumentParser
-import numpy as np
 import logging
-from input_feeder import InputFeeder
-import constants
 import os
+from argparse import ArgumentParser
+
+import cv2
+import imutils
+import numpy as np
+
+import constants
 from face_detection import Face_Model
 from facial_landmarks_detection import Landmark_Model
 from gaze_estimation import Gaze_Estimation_Model
 from head_pose_estimation import Head_Pose_Model
+from input_feeder import InputFeeder
 from mouse_controller import MouseController
-import cv2
-import imutils
-import math
 
 
 # import line_profiler
@@ -42,12 +43,16 @@ def build_argparser():
                         help="Path to video file or enter cam for webcam")
     parser.add_argument("-it", "--input_type", required=True, type=str,
                         help="Provide the source of video frames." + constants.VIDEO + " " + constants.WEBCAM + " | " + constants.IP_CAMERA + " | " + constants.IMAGE)
-    parser.add_argument("-debug", "--debug", required=False, type=str, nargs='+',
+    parser.add_argument("-flags", "--previewFlags", required=False, nargs='+',
                         default=[],
-                        help="To debug each model's output visually, type the model name with comma seperated after --debug")
+                        help="Specify flag from ff, fl, fh, fg like -flags ff fl(Space separated if multiple values)"
+                             "ff for faceDetectionModel, fl for landmarkRegressionModel"
+                             "fh for headPoseEstimationModel, fg for gazeEstimationModel")
     parser.add_argument("-ld", "--cpu_extension", required=False, type=str,
                         default=None,
                         help="linker libraries if have any")
+    parser.add_argument("-fs", "--frame_skipping", type=int, default=5,
+                        help="frame skip between two mouse action")
     parser.add_argument("-d", "--device", type=str, default="CPU",
                         help="Provide the target device: "
                              "CPU, GPU, FPGA or MYRIAD is acceptable.")
@@ -58,31 +63,7 @@ def build_argparser():
 # @profile
 def main(args):
     logger = logging.getLogger()
-
-    feeder = None
-    if args.input_type == constants.VIDEO or args.input_type == constants.IMAGE:
-        extension = str(args.input).split('.')[1]
-        # if not extension.lower() in constants.ALLOWED_EXTENSIONS:
-        #     logger.error('Please provide supported extension.' + str(constants.ALLOWED_EXTENSIONS))
-        #     exit(1)
-
-        # if not os.path.isfile(args.input):
-        #     logger.error("Unable to find specified video/image file")
-        #     exit(1)
-
-        feeder = InputFeeder(args.input_type, args.input)
-    elif args.input_type == constants.IP_CAMERA:
-        if not str(args.input).startswith('http://'):
-            logger.error('Please provide ip of server with http://')
-            exit(1)
-
-        feeder = InputFeeder(args.input_type, args.input)
-    elif args.input_type == constants.WEBCAM:
-        feeder = InputFeeder(args.input_type)
-
     mc = MouseController("medium", "fast")
-
-    feeder.load_data()
 
     face_model = Face_Model(args.face, args.device, args.cpu_extension)
     face_model.check_model()
@@ -106,6 +87,17 @@ def main(args):
     logger.info("Head Pose Detection Model Loaded...")
     print('Loaded')
 
+    input_filename = args.input
+
+    if input_filename.lower() == 'cam':
+        feeder = InputFeeder(input_type='cam')
+    else:
+        if not os.path.isfile(input_filename):
+            logger.error("Unable to find specified video file")
+            exit(1)
+        feeder = InputFeeder(input_type='video', input_file=input_filename)
+
+    feeder.load_data()
     w = int(feeder.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     h = int(feeder.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(feeder.cap.get(cv2.CAP_PROP_FPS))
@@ -113,8 +105,9 @@ def main(args):
     out_video = cv2.VideoWriter(os.path.join('output_video.mp4'), cv2.VideoWriter_fourcc(*"mp4v"), fps,
                                 (w, h), True)
 
-    preview_flags = []
-    # ['fl', 'fh', 'fg', 'ff']
+    preview_flags = args.previewFlags
+    frame_skipping = args.frame_skipping
+    preview_flags = ['fl', 'fh', 'fg', 'ff']
     try:
         frame_count = 0
         for ret, frame in feeder.next_batch():
@@ -181,7 +174,7 @@ def main(args):
             cv2.imshow('preview', image)
             out_video.write(frame)
 
-            if frame_count % 20 == 0:
+            if frame_count % frame_skipping == 0:
                 mc.move(mouse_cord[0], mouse_cord[1])
 
             if key == 27:
@@ -198,9 +191,9 @@ def main(args):
 
 
 if __name__ == '__main__':
-    arg = '-f ../models/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.xml -l ../models/intel/landmarks-regression-retail-0009/FP16/landmarks-regression-retail-0009.xml -hp ../models/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -ge ../models/intel/gaze-estimation-adas-0002/FP16/gaze-estimation-adas-0002.xml -i ../bin/demo.mp4 -it video -d CPU -debug headpose gaze face'.split(
-        ' ')
-    args = build_argparser().parse_args(arg)
-    # args = build_argparser().parse_args()
+    # arg = "-f ../models/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.xml -l ../models/intel/landmarks-regression-retail-0009/FP16/landmarks-regression-retail-0009.xml -hp ../models/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -ge ../models/intel/gaze-estimation-adas-0002/FP16/gaze-estimation-adas-0002.xml -i ../bin/demo.mp4 -it video -d CPU -flags ff fl fh fg".split(
+    #     ' ')
+    # args = build_argparser().parse_args(arg)
+    args = build_argparser().parse_args()
 
     main(args)
