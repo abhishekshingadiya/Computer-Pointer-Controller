@@ -73,8 +73,6 @@ Argument|Type|Description
 
 ###### Directory Structure
 
-
-![Directory-Structure](./bin/tree.png)
 - <b>bin</b> folder contains the media files
 - <b>models</b> folder contains pre-trained models from Open Model Zoo
     - intel
