@@ -8,6 +8,7 @@ from openvino.inference_engine import IENetwork, IECore
 import cv2
 import numpy as np
 
+import ngraph as ng
 
 class Face_Model:
     '''
@@ -16,7 +17,7 @@ class Face_Model:
 
     def __init__(self, model_name, device='CPU', extensions=None):
         self.core = None
-        self.network = None
+        # self.network = None
         self.input = None
         self.output = None
         self.mode = 'async'
@@ -27,7 +28,8 @@ class Face_Model:
         self.core = IECore()
         self.network = self.core.read_network(model=str(model_name),
                                               weights=str(os.path.splitext(model_name)[0] + ".bin"))
-        self.input = next(iter(self.network.inputs))
+
+        self.input = next(iter(self.network.input_info))
         self.output = next(iter(self.network.outputs))
 
     def load_model(self):
@@ -49,18 +51,19 @@ class Face_Model:
 
         if self.mode == 'async':
             self.exec_network.requests[self.request_id].wait()
-            result = self.exec_network.requests[self.request_id].outputs[self.output]
+            result = self.exec_network.requests[self.request_id].output_blobs[self.output].buffer
             cropface, box = self.preprocess_output(result[0][0], image)
             return cropface, box
         else:
             if self.exec_network.requests[self.request_id].wait(-1) == 0:
-                result = self.exec_network.requests[self.request_id].outputs[self.output]
+                result = self.exec_network.requests[self.request_id].output_blobs[self.output].buffer
                 cropface, box = self.preprocess_output(result[0][0], image)
                 return cropface, box
 
     def check_model(self):
         supported_layers = self.core.query_network(network=self.network, device_name=self.device)
-        unsupported_layers = [layer for layer in self.network.layers.keys() if layer not in supported_layers]
+        function = ng.function_from_cnn(self.network).get_ops()
+        unsupported_layers = [layer for layer in function if layer.friendly_name not in supported_layers]
         if len(unsupported_layers) > 0:
             print("Please check extention for these unsupported layers =>" + str(unsupported_layers))
             exit(1)
@@ -71,7 +74,7 @@ class Face_Model:
         Before feeding the data into the model for inference,
         you might have to preprocess it. This function is where you can do that.
         '''
-        net_input_shape = self.network.inputs[self.input].shape
+        net_input_shape = self.network.input_info[self.input].input_data.shape
         p_frame = cv2.resize(image, (net_input_shape[3], net_input_shape[2]))
         p_frame = p_frame.transpose(2, 0, 1)
         # p_frame = np.expand_dims(p_frame, axis=1)
