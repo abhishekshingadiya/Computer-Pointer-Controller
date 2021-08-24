@@ -24,7 +24,7 @@ which includes openvino inference API, OpenVino WorkBench and VTune Profiler.
 
         source /opt/intel/openvino_2021/bin/setupvars.sh 
             
-6. Just execute <i>runme.sh</i> from working directory to install prerequisites and you are good to go !!
+6. Just execute <i>runme.sh</i> from working directory to install prerequisites and you are good to go !! (open and change path according to your OpenVino version)
 
         ./runme.sh
 
@@ -35,9 +35,19 @@ We have provided three ways to run the application
 2. Video File
 3. [IP WebCam](https://play.google.com/store/apps/details?id=com.pas.webcam&hl=en_US) from Android App
 
-You need to execute following command from the root directory of the project with your configuration.
+You need to execute following command from the src directory of the project with your configuration.
+For video file:
     
-    python src/driver.py -f models/intel/face-detection-adas-binary-0001/INT1/face-detection-adas-binary-0001.xml -l models/intel/landmarks-regression-retail-0009/FP16/landmarks-regression-retail-0009.xml -hp models/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -ge models/intel/gaze-estimation-adas-0002/FP16/gaze-estimation-adas-0002.xml -i bin/demo.mp4 -it video -d CPU -debug headpose gaze
+    python driver.py -f ../models/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.xml -l ../models/intel/landmarks-regression-retail-0009/FP16/landmarks-regression-retail-0009.xml -hp ../models/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -ge ../models/intel/gaze-estimation-adas-0002/FP16/gaze-estimation-adas-0002.xml -i ../bin/demo.mp4 -it video -d CPU 
+
+For cam:
+    
+    python driver.py -f ../models/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.xml -l ../models/intel/landmarks-regression-retail-0009/FP16/landmarks-regression-retail-0009.xml -hp ../models/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -ge ../models/intel/gaze-estimation-adas-0002/FP16/gaze-estimation-adas-0002.xml -i cam -it cam -d CPU 
+
+For fun and debug:
+    
+    python driver.py -f ../models/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.xml -l ../models/intel/landmarks-regression-retail-0009/FP16/landmarks-regression-retail-0009.xml -hp ../models/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -ge ../models/intel/gaze-estimation-adas-0002/FP16/gaze-estimation-adas-0002.xml -i ../bin/demo.mp4 -it video -d CPU -flags ff fl fh fg
+
 
 Please check following video to get more information on "How to run".
 
@@ -56,9 +66,10 @@ Argument|Type|Description
 -ge| Mandatory | Path to .xml file of Gaze Estimation model.
 -i| Mandatory | Path to video file or enter cam for webcam
 -it| Mandatory | Provide the source of video frames.
--debug  | Optional | To debug each model's output visually, type the model name with comma seperated after --debug
+-flags  | Optional | For debug Specify flag from ff, fl, fh, fg like -flags ff fl(Space separated if multiple values) ff for faceDetectionModel, fl for landmarkRegressionModel
 -ld | Optional | linker libraries if have any
 -d | Optional | Provide the target device: CPU / GPU / MYRIAD / FPGA
+-fs | Optional | Frame skip between two mouse action
 
 ###### Directory Structure
 
@@ -67,7 +78,7 @@ Argument|Type|Description
 - <b>bin</b> folder contains the media files
 - <b>models</b> folder contains pre-trained models from Open Model Zoo
     - intel
-        1. face-detection-adas-binary-0001
+        1. face-detection-adas-0001
         2. gaze-estimation-adas-0002
         3. head-pose-estimation-adas-0001
         4. landmarks-regression-retail-0009
